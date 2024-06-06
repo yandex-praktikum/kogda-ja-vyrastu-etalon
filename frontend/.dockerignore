@@ -1,0 +1,32 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directory
+node_modules
+
+# User defined
+test
+Makefile
+.env
+.git
+docs
+deploy
+ss
+
+# this is all that's still pretty useless
+.npmrc
+.semaphore-cache
+Dockerfile*
+.istanbul.yml
+docker-release.sh
+.editorconfig
+.gitignore
+.npmignore
+.gitlab
+k8s
+.editorconfig
+.eslint*
+.env*
+docker-compose.yml

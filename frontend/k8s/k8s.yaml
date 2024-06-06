@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kogda-virastu-frontend
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kogda-virastu-frontend
+  template:
+    metadata:
+      labels:
+        app: kogda-virastu-frontend
+    spec:
+      containers:
+      - image: practicum.gitlab.yandexcloud.net:5050/prk-dev/kogda-virastu-frontend:__VERSION__
+        imagePullPolicy: Always
+        name: kogda-virastu-frontend
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: gitlab-creds
+      serviceAccountName: deploy-manager
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  name: kogda-virastu-frontend-ingress
+  namespace: default
+spec:
+  rules:
+  - host: kogda-virastu-frontend-dev.practicum-team.ru
+    http:
+      paths:
+      - backend:
+          service:
+            name: kogda-virastu-frontend
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - kogda-virastu-frontend-dev.practicum-team.ru
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kogda-virastu-frontend
+  namespace: default
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    app: kogda-virastu-frontend

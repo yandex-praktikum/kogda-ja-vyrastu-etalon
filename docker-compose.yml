@@ -1,0 +1,24 @@
+version: '3'
+services:
+  mongo:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=deploy
+      - MONGODB_INITDB_ROOT_PASSWORD=deploy
+    ports:
+      - 27017:27017
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data/db
+      - type: bind
+        source: ./share
+        target: /data/share
+  backend:
+    build: ./backend
+    env_file:
+      - .env
+    ports:
+      - 3000:3000
+    links:
+      - mongo

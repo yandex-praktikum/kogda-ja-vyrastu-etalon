@@ -1,0 +1,6 @@
+.env*
+.eslintrc*
+.git
+.gitignore
+.prettierrc
+README.md

@@ -1,0 +1,3 @@
+include:
+  - project: 'prk-dev/ci-templates'
+    file: 'templates/kaniko-build-docker-image.yml'
