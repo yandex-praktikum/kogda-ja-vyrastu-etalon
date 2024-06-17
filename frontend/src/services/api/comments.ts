@@ -1,6 +1,6 @@
+import { Article } from './articles';
 import createInstance from './createInstance';
 import { User } from './users';
-import { Article } from './articles';
 
 export interface Comment {
   id: number;
@@ -30,4 +30,4 @@ export const post = (articleId: number, createCommentDto: CreateCommentDto) => c
 
 export const getAll = (articleId: number) => commentsAPI.get<Comment[]>(`/${articleId}/comments`).then(({ data }) => data);
 
-export const remove = (articleId: number, commentId: number) => commentsAPI.delete(`/${articleId}/comments/${commentId}`);
+export const remove = (articleId: number, commentId: number) => commentsAPI.delete<Comment>(`/${articleId}/comments/${commentId}`);

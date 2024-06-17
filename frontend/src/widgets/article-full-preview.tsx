@@ -1,12 +1,14 @@
-import React, { FC, MouseEventHandler } from 'react';
-import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { FC, MouseEventHandler } from 'react';
 import { FormattedMessage } from 'react-intl';
-import AuthorHeadingWidget from './author-heading-widget';
+import { Link } from 'react-router-dom';
+import styled from 'styled-components';
 import { Article as IArticle } from '../services/api/articles';
-import BarTags from './bar-tags';
-import { Divider } from '../ui-lib';
 import { getPropOnCondition } from '../services/helpers';
+import { useSelector } from '../services/hooks';
+import { Divider } from '../ui-lib';
+import { isLiked } from './article';
+import AuthorHeadingWidget from './author-heading-widget';
+import BarTags from './bar-tags';
 
 const ArticleCardContainer = styled.div`
     width: 700px;
@@ -93,6 +95,8 @@ const ContentContainer = styled.div<TElementWithImage>`
 const ArticleImage = styled.img`
 width: 159px;
 height: 85px;
+object-fit: cover;
+object-position: top;
 @media screen and (max-width: 320px) {
     width: 280px;
     height: 150px;
@@ -131,33 +135,36 @@ type TArticleFullPreview = {
   onLikeClick: MouseEventHandler,
 };
 
-const ArticleFullPreview: FC<TArticleFullPreview> = ({ article, onLikeClick }) => (
-
-  <ArticleCardContainer>
-    <AuthorHeadingWidget
-      username={article.author?.username}
-      nickname={article.author?.nickname ?? article.author?.username}
-      image={article.author.image ?? ''}
-      date={new Date(article.createdAt)}
-      isLiked={article.favoredByCurrentUser}
-      likesCount={article.favoredCount}
-      onLikeClick={onLikeClick} />
-    <ContentContainer image={article.image}>
-      <ArticleName>{article.title}</ArticleName>
-      {article.image && <ArticleImage src={article.image} />}
-      <Article image={article.image}>{article.body}</Article>
-      <Link className='link' to={`/article/${article.slug}`}>
-        <FormattedMessage id='articleEnter' />
-      </Link>
-      <BarTagsWrapper image={article.image}>
-        <BarTags
-          isHasImage={!!article.image}
-          rowReverse
-          tagList={article.tags} />
-      </BarTagsWrapper>
-    </ContentContainer>
-    <Divider distance={0} />
-  </ArticleCardContainer>
-);
+const ArticleFullPreview: FC<TArticleFullPreview> = ({ article, onLikeClick }) => {
+  const currentUser = useSelector((state) => state.profile);
+  const favorite = isLiked(article?.favoredBy, currentUser.id);
+  return (
+    <ArticleCardContainer>
+      <AuthorHeadingWidget
+        username={article.author?.username}
+        nickname={article.author?.nickname ?? article.author?.username}
+        image={article.author.image ?? ''}
+        date={new Date(article.createdAt)}
+        isLiked={favorite!}
+        likesCount={article.favoredCount}
+        onLikeClick={onLikeClick} />
+      <ContentContainer image={article.image}>
+        <ArticleName>{article.title}</ArticleName>
+        {article.image && <ArticleImage src={article.image} />}
+        <Article image={article.image}>{article.description}</Article>
+        <Link className='link' to={`/article/${article.slug}`}>
+          <FormattedMessage id='articleEnter' />
+        </Link>
+        <BarTagsWrapper image={article.image}>
+          <BarTags
+            isHasImage={!!article.image}
+            rowReverse
+            tagList={article.tags} />
+        </BarTagsWrapper>
+      </ContentContainer>
+      <Divider distance={0} />
+    </ArticleCardContainer>
+  );
+};
 
 export default ArticleFullPreview;

@@ -26,6 +26,7 @@ module.exports = {
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
+    tsconfigRootDir: __dirname,
     "ecmaFeatures": {
       "jsx": true,
       impliedStrict: 'true'
@@ -36,6 +37,7 @@ module.exports = {
   },
   ignorePatterns: ['*.cjs', 'src/reportWebVitals.js', 'src/reportWebVitals.ts'],
   rules: {
+    "react/react-in-jsx-scope": "off",
     'no-underscore-dangle': ['error', {
       allow: ['_id', '__REDUX_DEVTOOLS_EXTENSION_COMPOSE__'],
       enforceInMethodNames: true,

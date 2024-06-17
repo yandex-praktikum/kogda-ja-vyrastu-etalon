@@ -1,21 +1,23 @@
 import { AxiosError } from 'axios';
-import { AppThunk } from '../store/store.types';
+import { TAPIError } from '../services/api.types';
+import { Article } from '../services/api/articles';
+import { addArticleToFavourites } from '../services/api/favourites';
+import { makeErrorObject } from '../services/helpers';
 import {
-  setViewFeed,
+  likeArticlePostFailed,
   likeArticlePostRequested,
   likeArticlePostSucceeded,
-  likeArticlePostFailed,
   setViewArticle,
+  setViewFeed,
 } from '../store';
-import { TAPIError } from '../services/api.types';
-import { makeErrorObject } from '../services/helpers';
-import { addArticleToFavourites } from '../services/api/favourites';
+import { AppThunk } from '../store/store.types';
 
 const addLikeThunk: AppThunk = (articleId: number) => async (dispatch, getState) => {
   try {
     dispatch(likeArticlePostRequested());
 
-    await addArticleToFavourites(articleId);
+    const response = await addArticleToFavourites(articleId);
+    const newArticle = response.data as Article;
 
     const articles = getState().view.feed ?? [];
     const articleView = getState().view.article;
@@ -23,7 +25,7 @@ const addLikeThunk: AppThunk = (articleId: number) => async (dispatch, getState)
     if (articleView) {
       dispatch(
         setViewArticle({
-          ...articleView, favoredByCurrentUser: true, favoredCount: articleView.favoredCount + 1,
+          ...newArticle,
         }),
       );
     }
@@ -31,7 +33,7 @@ const addLikeThunk: AppThunk = (articleId: number) => async (dispatch, getState)
     dispatch(setViewFeed(articles.map(
       (item) => (
         item.id === articleId
-          ? { ...item, favoredByCurrentUser: true, favoredCount: item.favoredCount + 1 }
+          ? newArticle
           : item
       ),
     )));

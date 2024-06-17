@@ -1,13 +1,14 @@
-import React, { FC, MouseEventHandler } from 'react';
+import { FC, MouseEventHandler } from 'react';
 import { FormattedMessage } from 'react-intl';
 import styled from 'styled-components';
-import { useDispatch, useSelector } from '../services/hooks';
-import { RegularText } from '../ui-lib';
-import ScrollRibbon from './scroll-ribbon';
-import ArticleFullPreview from './article-full-preview';
-import { addLikeThunk, deleteLikeThunk, getPublicFeedThunk } from '../thunks';
-import { BasicNormalButton } from '../ui-lib/buttons';
 import { ArticlesQueryFilter } from '../services/api/articles';
+import { useDispatch, useSelector } from '../services/hooks';
+import { addLikeThunk, deleteLikeThunk, getPublicFeedThunk } from '../thunks';
+import { RegularText } from '../ui-lib';
+import { BasicNormalButton } from '../ui-lib/buttons';
+import { isLiked } from './article';
+import ArticleFullPreview from './article-full-preview';
+import ScrollRibbon from './scroll-ribbon';
 
 const RibbonWrapper = styled.ul`
 width: 100%;
@@ -44,6 +45,8 @@ interface FeedRibbonProps {
 const FeedRibbon : FC<FeedRibbonProps> = ({ filters = {} }) => {
   const dispatch = useDispatch();
   const posts = useSelector((state) => state.view.feed) || [];
+  const currentUser = useSelector((state) => state.profile);
+
   const isFeedLoading = useSelector((state) => state.api.isPublicFeedFetching);
   const { isPublicFeedFetching } = useSelector((state) => state.api);
 
@@ -62,8 +65,10 @@ const FeedRibbon : FC<FeedRibbonProps> = ({ filters = {} }) => {
     <ScrollRibbon>
       <RibbonWrapper>
         {posts.map((post) => {
+          const favorite = isLiked(post?.favoredBy, currentUser.id);
+
           const onClick : MouseEventHandler = () => {
-            if (post.favoredByCurrentUser) {
+            if (favorite) {
               dispatch(deleteLikeThunk(post.id));
             } else {
               dispatch(addLikeThunk(post.id));

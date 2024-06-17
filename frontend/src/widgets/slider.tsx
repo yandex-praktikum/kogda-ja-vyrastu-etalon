@@ -1,14 +1,16 @@
-import styled from 'styled-components';
-import React, {
-  FC, useState, MouseEventHandler,
+import {
+  FC,
+  MouseEventHandler,
+  useState,
 } from 'react';
 import { useIntl } from 'react-intl';
-import BuletSlider from '../ui-lib/buledSlider';
-import { useSelector } from '../services/hooks';
-import BriefPostAnnounceWidget from './brief-post-announce-widget';
-import { TArticle } from '../types/types';
-import { Divider, HeaderThreeText } from '../ui-lib';
+import styled from 'styled-components';
 import { Article } from '../services/api/articles';
+import { useSelector } from '../services/hooks';
+import { Divider, HeaderThreeText } from '../ui-lib';
+import BuletSlider from '../ui-lib/buledSlider';
+import { isLiked } from './article';
+import BriefPostAnnounceWidget from './brief-post-announce-widget';
 
 const SlideContainer = styled.div`
 @keyframes show{
@@ -53,9 +55,12 @@ const Slide: FC<TSlide> = ({ data, name, page }) => {
     title,
     createdAt,
     favoredCount,
-    favoredByCurrentUser,
+    favoredBy,
     slug,
   } = data;
+  const currentUser = useSelector((state) => state.profile);
+  const favorite = isLiked(favoredBy, currentUser.id);
+
   const nope = (): void => {
   };
   if (page === name) {
@@ -68,8 +73,9 @@ const Slide: FC<TSlide> = ({ data, name, page }) => {
           title={title}
           image={image ?? ''}
           date={new Date(createdAt)}
-          isLiked={favoredByCurrentUser}
+          isLiked={favorite!}
           likesCount={favoredCount}
+          slug={slug}
           onLikeClick={nope} />
       </SlideContainer>
     );

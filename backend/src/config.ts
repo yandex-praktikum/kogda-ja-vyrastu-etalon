@@ -4,6 +4,8 @@ import * as keypath from 'keypath';
 config();
 
 function createConfig() {
+  console.log(process.env.MONGO_HOST);
+  
   const configuration = {
     server: {
       port: process.env.SERVER_PORT || 3000,

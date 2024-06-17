@@ -1,27 +1,27 @@
+import * as bcrypt from 'bcrypt';
 import { NextFunction, Request, Response } from 'express';
+import { Types } from 'mongoose';
+import { BadRequestError } from '../errors/BadRequest';
+import { NotFoundError } from '../errors/NotFound';
+import { ServerError } from '../errors/ServerError';
+import { SubscriptionType } from '../types/subscription-type';
 import { IUser, UserModel } from './users.model';
 import type { CreateUserBody } from './users.validation';
-import * as bcrypt from 'bcrypt';
-import { BadRequestError } from '../errors/BadRequest';
-import { ServerError } from '../errors/ServerError';
-import { NotFoundError } from '../errors/NotFound';
-import { SubscriptionType } from '../types/subscription-type';
-import { Types } from 'mongoose';
 
 export class UsersController {
-  constructor(private userModel: UserModel) {}
+  constructor(private userModel: UserModel) { }
 
   create = async (
     req: Request<object, Omit<IUser, 'password' | 'salt'>, CreateUserBody>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { email, username, password, nickname } = req.body;
-
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await UserModel.hashPassword(password, salt);
-
     try {
+      const { email, username, password, nickname } = req.body;
+
+      const salt = await bcrypt.genSalt();
+      const hashedPassword = await UserModel.hashPassword(password, salt);
+
       const user = await this.userModel.create({
         email,
         username,
@@ -59,11 +59,11 @@ export class UsersController {
     req: Request<object, Omit<IUser, 'password' | 'salt'>>,
     res: Response,
   ) => {
-    return res.status(200).send(req.user);
+    return res.status(200).send(res.locals.user);
   };
 
   findOne = async (
-    req: Request<{ id: string }, Omit<IUser, 'password' | 'salt'>>,
+    req: Request<{ id: string; }, Omit<IUser, 'password' | 'salt'>>,
     res: Response,
     next: NextFunction,
   ) => {
@@ -79,7 +79,7 @@ export class UsersController {
   };
 
   findByUsername = async (
-    req: Request<{ username: string }, Omit<IUser, 'password' | 'salt'>>,
+    req: Request<{ username: string; }, Omit<IUser, 'password' | 'salt'>>,
     res: Response,
     next: NextFunction,
   ) => {
@@ -95,23 +95,28 @@ export class UsersController {
   };
 
   update = async (
-    req: Request<{ id: string }, Omit<IUser, 'password' | 'salt'>>,
+    req: Request<{ id: string; }, Omit<IUser, 'password' | 'salt'>>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { id } = req.params;
-    const { nickname, bio, password, roles } = req.body;
+    try {
+      const { id } = req.params;
+      const { nickname, bio, password, roles } = req.body;
 
-    await this.userModel.updateOne(
-      { _id: new Types.ObjectId(id) },
-      { nickname, bio, password, roles },
-    );
+      await this.userModel.updateOne(
+        { _id: new Types.ObjectId(id) },
+        { nickname, bio, password, roles },
+      );
 
-    return this.findOne(req, res, next);
+      return this.findOne(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+
   };
 
   delete = async (
-    req: Request<{ id: string }>,
+    req: Request<{ id: string; }>,
     res: Response,
     next: NextFunction,
   ) => {
@@ -128,42 +133,50 @@ export class UsersController {
 
   addSubscription =
     (type: SubscriptionType) =>
-    async (req: Request<{ id: string }>, res: Response) => {
-      const { id } = req.params;
+      async (req: Request<{ id: string; }>, res: Response, next: NextFunction) => {
+        try {
+          const { id } = req.params;
 
-      await this.userModel.updateOne(
-        {
-          _id: req.user.id,
-        },
-        {
-          $addToSet: {
-            [type === SubscriptionType.Tag
-              ? 'tagsSubscriptions'
-              : 'usersSubscriptions']: new Types.ObjectId(id),
-          },
-        },
-      );
+          await this.userModel.updateOne(
+            {
+              _id: res.locals.user.id,
+            },
+            {
+              $addToSet: {
+                [type === SubscriptionType.Tag
+                  ? 'tagsSubscriptions'
+                  : 'usersSubscriptions']: new Types.ObjectId(id),
+              },
+            },
+          );
 
-      return res.status(201).send();
-    };
+          return res.status(201).send();
+        } catch (error) {
+          next(error);
+        }
+      };
   removeSubscription =
     (type: SubscriptionType) =>
-    async (req: Request<{ id: string }>, res: Response) => {
-      const { id } = req.params;
+      async (req: Request<{ id: string; }>, res: Response, next: NextFunction) => {
+        try {
+          const { id } = req.params;
 
-      await this.userModel.updateOne(
-        {
-          _id: req.user.id,
-        },
-        {
-          $pull: {
-            [type === SubscriptionType.Tag
-              ? 'tagsSubscriptions'
-              : 'usersSubscriptions']: new Types.ObjectId(id),
-          },
-        },
-      );
+          await this.userModel.updateOne(
+            {
+              _id: res.locals.user.id,
+            },
+            {
+              $pull: {
+                [type === SubscriptionType.Tag
+                  ? 'tagsSubscriptions'
+                  : 'usersSubscriptions']: new Types.ObjectId(id),
+              },
+            },
+          );
 
-      return res.status(201).send();
-    };
+          return res.status(201).send();
+        } catch (error) {
+          next(error);
+        }
+      };
 }

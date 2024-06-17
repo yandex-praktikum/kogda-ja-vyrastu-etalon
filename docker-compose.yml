@@ -1,24 +1,33 @@
-version: '3'
+version: ''
 services:
   mongo:
-    image: mongodb/mongodb-community-server:6.0-ubi8
-    environment:
-      - MONGODB_INITDB_ROOT_USERNAME=deploy
-      - MONGODB_INITDB_ROOT_PASSWORD=deploy
-    ports:
-      - 27017:27017
+    image: mongo
+    restart: always
     volumes:
-      - type: bind
-        source: ./data
-        target: /data/db
-      - type: bind
-        source: ./share
-        target: /data/share
+      - ./data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+    depends_on:
+      - mongo
   backend:
     build: ./backend
+    restart: always
     env_file:
       - .env
+    volumes:
+      - ./backend/src:/var/www/app/src
     ports:
       - 3000:3000
-    links:
+    depends_on:
       - mongo

@@ -1,4 +1,0 @@
-ci_access:
-  projects:
-    - id: create-subdomain
-    - id: strapi-praktikum

@@ -1,48 +1,61 @@
 import { NextFunction, Request, Response } from 'express';
+import { FilterQuery, QueryOptions, Types } from 'mongoose';
+import { FiltersQuery, SortOption } from '../common/validation';
+import { NotFoundError } from '../errors/NotFound';
+import { ServerError } from '../errors/ServerError';
+import type { ITag, TagModel } from '../tags/tags.model';
+import type { UserModel } from '../users/users.model';
 import type { ArticleModel, IArticle } from './articles.model';
 import {
   CreateArticleBody,
   GetArticlesQuery,
   UpdateArticleBody,
 } from './articles.validation';
-import { ServerError } from '../errors/ServerError';
-import { NotFoundError } from '../errors/NotFound';
-import type { ITag, TagModel } from '../tags/tags.model';
-import { Types, FilterQuery, QueryOptions } from 'mongoose';
-import type { UserModel } from '../users/users.model';
-import { FiltersQuery, SortOption } from '../common/validation';
 
 export class ArticlesController {
   constructor(
     private articleModel: ArticleModel,
     private tagModel: TagModel,
     private userModel: UserModel,
-  ) {}
+  ) { }
+
+  updateAndCreateTags = async (bodyTags: string[]) => {
+      const oldTags = await this.tagModel.find({label: {"$in": bodyTags  }})
+      const labelOldTags = oldTags.map((tag) => tag.label);
+      const setLabelOldTags = new Set<string>(labelOldTags);
+      const updateTag = bodyTags.filter((tag)  =>!setLabelOldTags.has(tag));
+      
+      let tagsEntities: ITag[] = [];
+
+      if(updateTag.length)  {
+        tagsEntities = await this.tagModel.create(
+          updateTag.map((tag) => ({ label: tag })),
+          { ordered: false },
+        );
+      } 
+
+      return [... oldTags.map(tag => tag.id), ...tagsEntities.map((tag)  =>  tag.id)];
+  }
 
   create = async (
     req: Request<object, IArticle, CreateArticleBody>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { title, slug, description, body, tags = [] } = req.body;
-
+    const { title, slug, description, body, tags = [], image } = req.body;
     try {
-      let tagsEntities: ITag[] = [];
-
-      if (tags.length) {
-        tagsEntities = await this.tagModel.create(
-          tags.map((tag) => ({ label: tag })),
-          { ordered: false },
-        );
+      let tagsEntity: string[]  = [];
+      if (tags.length){
+        tagsEntity = await this.updateAndCreateTags(tags)
       }
-
       const article = await this.articleModel.create({
-        author: new Types.ObjectId(req.user.id),
+        author: new Types.ObjectId(res.locals.user.id),
         title,
         slug,
         description,
         body,
-        tags: tagsEntities.map((tag) => tag.id),
+        image,
+        tags: tagsEntity,
       });
 
       res.status(201).send(article);
@@ -55,215 +68,257 @@ export class ArticlesController {
   findAll = async (
     req: Request<object, IArticle[], object, GetArticlesQuery>,
     res: Response,
+    next: NextFunction,
   ) => {
-    const {
-      limit = 20,
-      offset = 0,
-      sort,
-      tags,
-      author,
-      isFavourite,
-    } = req.query;
+    try {
+      const {
+        limit = 20,
+        offset = 0,
+        sort,
+        tags,
+        author,
+        isFavourite,
+      } = req.query;
+     
+      const filter: FilterQuery<IArticle> = {};
 
-    const filter: FilterQuery<IArticle> = {};
+      if (tags) {
+        const tagsEntity = await this.tagModel.find({label: {"$in": tags  }})
+        const tagsIds = tagsEntity.map((tag) => tag.id);
+        console.log(tagsIds);
+        
+        filter.tags = { $in: tagsIds };
+        console.log(filter)
+      }
 
-    if (tags) {
-      filter.tags = { $all: tags };
+      if (author) {
+        const authorEntity = await this.userModel.findOne({ username: author });
+        console.log(author);
+        filter.author = authorEntity.id;
+      }
+
+      if (isFavourite && res.locals.user) {
+        console.log(isFavourite);
+        filter.favoredBy = res.locals.user.id;
+      }
+
+      const options: QueryOptions<IArticle> = {
+        limit,
+        skip: offset,
+      };
+
+      switch (sort) {
+        case SortOption.Popular:
+          options.sort = { favoredCount: -1 };
+          break;
+        case SortOption.Recent:
+        default:
+          options.sort = { createdAt: -1 };
+          break;
+      }
+
+      const articles = await this.articleModel
+        .find(filter, {}, options)
+        .populate('tags')
+        .populate('author')
+
+      res.send(articles);
+    } catch (error) {
+      next(error);
     }
 
-    if (author) {
-      const authorEntity = await this.userModel.findOne({ username: author });
-
-      filter.author = authorEntity.id;
-    }
-
-    if (isFavourite && req.user) {
-      filter.favoredBy = req.user.id;
-    }
-
-    const options: QueryOptions<IArticle> = {
-      limit,
-      skip: offset,
-    };
-
-    switch (sort) {
-      case SortOption.Popular:
-        options.sort = { favoredCount: -1 };
-        break;
-      case SortOption.Recent:
-      default:
-        options.sort = { createdAt: -1 };
-        break;
-    }
-
-    const articles = await this.articleModel
-      .find(filter, {}, options)
-      .populate('author')
-      .populate('tags');
-
-    res.send(articles);
   };
 
   getFeed = async (
     req: Request<object, IArticle[], object, FiltersQuery>,
     res: Response,
+    next: NextFunction,
   ) => {
-    const { limit = 20, offset = 0, sort } = req.query;
+    try {
+      const { limit = 20, offset = 0, sort } = req.query;
 
-    const filter: FilterQuery<IArticle> = {
-      author: {
-        $in: req.user.usersSubscriptions,
-      },
-    };
+      const filter: FilterQuery<IArticle> = {
+        author: {
+          $in: res.locals.user.usersSubscriptions,
+        },
+      };
 
-    const options: QueryOptions<IArticle> = {
-      limit,
-      skip: offset,
-    };
+      const options: QueryOptions<IArticle> = {
+        limit,
+        skip: offset,
+      };
 
-    switch (sort) {
-      case SortOption.Popular:
-        options.sort = { favoredCount: -1 };
-        break;
-      case SortOption.Recent:
-      default:
-        options.sort = { createdAt: -1 };
-        break;
+      switch (sort) {
+        case SortOption.Popular:
+          options.sort = { favoredCount: -1 };
+          break;
+        case SortOption.Recent:
+        default:
+          options.sort = { createdAt: -1 };
+          break;
+      }
+
+      const articles = await this.articleModel
+        .find(filter, {}, options)
+        .populate('author')
+        .populate('tags');
+
+      res.send(articles);
+    } catch (error) {
+      next(error);
     }
-
-    const articles = await this.articleModel
-      .find(filter, {}, options)
-      .populate('author')
-      .populate('tags');
-
-    res.send(articles);
   };
 
   findOne = async (
-    req: Request<{ id: string }, IArticle>,
+    req: Request<{ id: string; }, IArticle>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { id } = req.params;
+    try {
+      const { id } = req.params;
 
-    const article = await this.articleModel
-      .findOne({ _id: new Types.ObjectId(id) })
-      .populate('author')
-      .populate('tags');
+      const article = await this.articleModel
+        .findOne({ _id: new Types.ObjectId(id) })
+        .populate('author')
+        .populate('tags');
 
-    if (!article) {
-      return next(new NotFoundError());
+      if (!article) {
+        return next(new NotFoundError());
+      }
+      return res.send(article);
+    } catch (error) {
+      next(error);
     }
 
-    return res.send(article);
   };
 
   findOneBySlug = async (
-    req: Request<{ slug: string }, IArticle>,
+    req: Request<{ slug: string; }, IArticle>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { slug } = req.params;
+    try {
+      const { slug } = req.params;
 
-    const article = await this.articleModel
-      .findOne({ slug })
-      .populate('author')
-      .populate('tags');
+      const article = await this.articleModel
+        .findOne({ slug })
+        .populate('author')
+        .populate('tags');
 
-    if (!article) {
-      return next(new NotFoundError());
+      if (!article) {
+        return next(new NotFoundError());
+      }
+
+      return res.send(article);
+    } catch (error) {
+      next(error);
     }
 
-    return res.send(article);
   };
 
   update = async (
-    req: Request<{ id: string }, IArticle, UpdateArticleBody>,
+    req: Request<{ id: string; }, IArticle, UpdateArticleBody>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { id } = req.params;
-    const body = req.body;
+    console.log(req.body);
+    
+    try {
+      const { id } = req.params;
+      const body = req.body;
 
-    if (body.tags.length) {
-      const tags = await this.tagModel.create(
-        body.tags.map((tag) => ({ label: tag })),
-        { ordered: false },
-      );
+      if (body.tags.length){
+        body.tags = await this.updateAndCreateTags(body.tags)
+      }
+      
+      const article = await this.articleModel.findOneAndUpdate(
+        { _id: new Types.ObjectId(id) },
+        body,
+        { new: true, runValidators: true },
+      ).orFail(() => new NotFoundError());
 
-      body.tags = tags.map((tag) => tag.id);
+      res.send(article);
+    } catch (error) {
+      next(error);
     }
 
-    const article = await this.articleModel.findOneAndUpdate(
-      { _id: new Types.ObjectId(id) },
-      body,
-      { new: true },
-    );
-
-    if (!article) {
-      next(new NotFoundError());
-    }
-
-    res.send(article);
   };
 
   delete = async (
-    req: Request<{ id: string }>,
+    req: Request<{ id: string; }>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { id } = req.params;
+    try {
+      const { id } = req.params;
 
-    const article = await this.articleModel.findOneAndDelete({
-      _id: new Types.ObjectId(id),
-    });
+      const article = await this.articleModel.findOneAndDelete({
+        _id: new Types.ObjectId(id),
+      });
 
-    if (!article) {
-      next(new NotFoundError());
+      if (!article) {
+        next(new NotFoundError());
+      }
+
+      res.status(200).send();
+    } catch (error) {
+      next(error);
     }
 
-    res.status(200).send();
   };
 
   likeArticle = async (
-    req: Request<{ id: string }>,
+    req: Request<{ id: string; }>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { id } = req.params;
-    const article = await this.articleModel.findOneAndUpdate(
-      { _id: new Types.ObjectId(id) },
-      {
-        $addToSet: { favoredBy: req.user.id },
-        $inc: { favoredCount: 1 },
-      },
-    );
+    try {
+      const { id } = req.params;
+      const article = await this.articleModel.findOneAndUpdate(
+        { _id: new Types.ObjectId(id) },
+        {
+          $addToSet: { favoredBy: res.locals.user.id },
+          $inc: { favoredCount: 1 },
+        },{
+          new: true
+        }
+      ).populate(['author', 'tags']);
 
-    if (!article) {
-      return next(new NotFoundError());
+      if (!article) {
+        return next(new NotFoundError());
+      }
+
+      return res.status(201).send(article);
+    } catch (error) {
+      next(error);
     }
 
-    return res.status(201).send();
   };
 
   removeLike = async (
-    req: Request<{ id: string }>,
+    req: Request<{ id: string; }>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { id } = req.params;
-    const article = await this.articleModel.findOneAndUpdate(
-      { _id: new Types.ObjectId(id) },
-      {
-        $pull: { favoredBy: req.user.id },
-        $inc: { favoredCount: -1 },
-      },
-    );
+    try {
+      const { id } = req.params;
+      const article = await this.articleModel.findOneAndUpdate(
+        { _id: new Types.ObjectId(id) },
+        {
+          $pull: { favoredBy: res.locals.user.id },
+          $inc: { favoredCount: -1 },
+        },{
+          new: true
+        }
+      ).populate(['author', 'tags']);
 
-    if (!article) {
-      return next(new NotFoundError());
+      if (!article) {
+        return next(new NotFoundError());
+      }
+
+      return res.status(200).send(article);
+    } catch (error) {
+      next(error);
     }
-
-    return res.status(200).send();
   };
 }

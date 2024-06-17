@@ -1,14 +1,14 @@
-import * as express from 'express';
-import mongoose from 'mongoose';
-import usersRouter from './users/users.router';
-import authTokensRouter from './auth-tokens/auth-tokens.router';
-import { errorsHandler } from './middlewares/errors';
-import config from './config';
-import articlesRouter from './articles/articles.router';
-import commentsRouter from './comments/comments.router';
-import tagsRouter from './tags/tags.router';
-import helmet from 'helmet';
 import * as cors from 'cors';
+import * as express from 'express';
+import helmet from 'helmet';
+import mongoose from 'mongoose';
+import articlesRouter from './articles/articles.router';
+import authTokensRouter from './auth-tokens/auth-tokens.router';
+import commentsRouter from './comments/comments.router';
+import config from './config';
+import { errorsHandler } from './middlewares/errors';
+import tagsRouter from './tags/tags.router';
+import usersRouter from './users/users.router';
 
 // Ensure virtual fields are serialised.
 mongoose.set('toJSON', {
@@ -44,7 +44,6 @@ const start = async () => {
     app.listen(serverPort, () => console.log('Server started on port 3000'));
   } catch (error) {
     console.error(error);
-    process.exit(1);
   }
 };
 

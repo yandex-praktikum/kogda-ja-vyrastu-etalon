@@ -1,5 +1,8 @@
 import { AxiosError } from 'axios';
-import { AppThunk } from '../store/store.types';
+import { TAPIError } from '../services/api.types';
+import { Article } from '../services/api/articles';
+import { removeArticleFromFavourites } from '../services/api/favourites';
+import { makeErrorObject } from '../services/helpers';
 import {
   likeArticleDeleteFailed,
   likeArticleDeleteRequested,
@@ -7,22 +10,21 @@ import {
   setViewArticle,
   setViewFeed,
 } from '../store';
-import { makeErrorObject } from '../services/helpers';
-import { TAPIError } from '../services/api.types';
-import { removeArticleFromFavourites } from '../services/api/favourites';
+import { AppThunk } from '../store/store.types';
 
 const deleteLikeThunk: AppThunk = (articleId: number) => async (dispatch, getState) => {
   try {
     dispatch(likeArticleDeleteRequested());
 
-    await removeArticleFromFavourites(articleId);
+    const response = await removeArticleFromFavourites(articleId);
+    const newArticle = response.data as Article;
 
     const articles = getState().view.feed ?? [];
     const articleView = getState().view.article;
     if (articleView) {
       dispatch(
         setViewArticle({
-          ...articleView, favoredByCurrentUser: false, favoredCount: articleView.favoredCount - 1,
+          ...newArticle,
         }),
       );
     }
@@ -30,7 +32,7 @@ const deleteLikeThunk: AppThunk = (articleId: number) => async (dispatch, getSta
       articles.map(
         (item) => (
           item.id === articleId
-            ? { ...item, favoredByCurrentUser: false, favoredCount: item.favoredCount - 1 }
+            ? newArticle
             : item
         ),
       ),

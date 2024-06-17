@@ -2,9 +2,9 @@ import React from 'react';
 import styled, { useTheme } from 'styled-components';
 import { TAuthorHeadingProps } from '../types/widgets.types';
 
+import { DeleteIcon } from '../ui-lib';
 import Author from './author';
 import Likes from './likes';
-import { DeleteIcon } from '../ui-lib';
 
 const HeadingContainer = styled.div`
   width: 100%;

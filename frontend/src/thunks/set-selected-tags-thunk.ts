@@ -1,10 +1,10 @@
 import { Tag } from '../services/api/tags';
-import { AppThunk } from '../store/store.types';
 import { setSelectedTags } from '../store';
+import { AppThunk } from '../store/store.types';
 import getPublicFeedThunk from './get-public-feed-thunk';
 
 const setSelectedTagsThunk: AppThunk = (tags: Tag[]) => (dispatch) => {
-  dispatch(getPublicFeedThunk({ tags: tags.map((tag) => tag.label) }));
+  dispatch(getPublicFeedThunk({ tags: tags.map((tag) => tag.label), offset: 0 }));
 
   dispatch(setSelectedTags(tags));
 };

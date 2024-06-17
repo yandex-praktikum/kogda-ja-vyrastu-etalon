@@ -6,7 +6,7 @@ export enum Role {
 }
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
 
   roles: Role[];
@@ -48,7 +48,7 @@ export interface UpdateUserDto {
   username?: string;
 }
 
-export const patch = (id: number, updateUserDto: UpdateUserDto) => usersAPI.patch<User>(`/${id}`, updateUserDto).then(({ data }) => data);
+export const patch = (id: string, updateUserDto: UpdateUserDto) => usersAPI.patch<User>(`/${id}`, updateUserDto).then(({ data }) => data);
 
 export const getCurrentUser = () => usersAPI.get<User>('/me').then(({ data }) => data);
 

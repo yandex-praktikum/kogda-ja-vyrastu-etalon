@@ -1,8 +1,8 @@
 import { model, Schema, Types } from 'mongoose';
-import { PublishState } from '../../src/types/publish-state';
-import { IUser } from '../users/users.model';
-import type { ITag } from '../tags/tags.model';
 import slugify from 'slugify';
+import { PublishState } from '../../src/types/publish-state';
+import type { ITag } from '../tags/tags.model';
+import { IUser } from '../users/users.model';
 
 export interface IArticle {
   id: string;
@@ -32,8 +32,6 @@ export interface IArticle {
   favoredBy: Types.ObjectId[];
 
   favoredCount: number;
-
-  favoredByCurrentUser: boolean;
 }
 
 const articleSchema = new Schema<IArticle>(

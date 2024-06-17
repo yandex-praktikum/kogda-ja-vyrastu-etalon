@@ -1,20 +1,24 @@
-import React, {
-  useEffect, FC, ChangeEventHandler, FormEventHandler, useState,
+import {
+  ChangeEventHandler,
+  FC,
+  FormEventHandler,
+  useEffect,
+  useState,
 } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { FormattedMessage } from 'react-intl';
-import { useSelector, useDispatch } from '../../services/hooks';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from '../../services/hooks';
 
 import {
-  setTitle,
-  setDescription,
-  setBody,
-  setTags,
-  setImage,
-  openConfirm,
   articleDeleteClear,
   articlePatchClear,
   articlePostClear,
+  openConfirm,
+  setBody,
+  setDescription,
+  setImage,
+  setTags,
+  setTitle,
 } from '../../store';
 import {
   getArticleThunk,
@@ -32,13 +36,13 @@ import {
 
 import {
   DeletePostButton,
+  FieldAboutArticle,
   FieldNameArticle,
   FieldTags,
+  FieldTextArticle,
   FieldUrl,
   PublishPostButton,
   SavePostButton,
-  FieldAboutArticle,
-  FieldTextArticle,
 } from '../../ui-lib';
 
 const EditorForm: FC = () => {
@@ -62,6 +66,7 @@ const EditorForm: FC = () => {
 
   useEffect(() => {
     if (initialArticle?.tags) {
+      console.log(initialArticle?.tags);
       dispatch(setTags(initialArticle.tags.map((tag) => tag.label).toString()));
     }
   }, [initialArticle, dispatch]);
@@ -99,31 +104,31 @@ const EditorForm: FC = () => {
     return <div>Подождите...</div>;
   }
 
-  const onChangeTitle : ChangeEventHandler<HTMLInputElement> = (evt) => {
+  const onChangeTitle: ChangeEventHandler<HTMLInputElement> = (evt) => {
     dispatch(setTitle(evt.target.value));
   };
 
-  const onChangeDescription : ChangeEventHandler<HTMLTextAreaElement> = (evt) => {
+  const onChangeDescription: ChangeEventHandler<HTMLTextAreaElement> = (evt) => {
     dispatch(setDescription(evt.target.value));
     // eslint-disable-next-line no-param-reassign
     evt.target.style.height = `${evt.target.scrollHeight + 2}px`;
   };
 
-  const onChangeBody : ChangeEventHandler<HTMLTextAreaElement> = (evt) => {
+  const onChangeBody: ChangeEventHandler<HTMLTextAreaElement> = (evt) => {
     dispatch(setBody(evt.target.value));
     // eslint-disable-next-line no-param-reassign
     evt.target.style.height = `${evt.target.scrollHeight + 2}px`;
   };
 
-  const onChangeTags : ChangeEventHandler<HTMLInputElement> = (evt) => {
+  const onChangeTags: ChangeEventHandler<HTMLInputElement> = (evt) => {
     dispatch(setTags(evt.target.value));
   };
 
-  const onChangeImage : ChangeEventHandler<HTMLInputElement> = (evt) => {
+  const onChangeImage: ChangeEventHandler<HTMLInputElement> = (evt) => {
     dispatch(setImage(evt.target.value));
   };
 
-  const submitForm : FormEventHandler<HTMLFormElement> = (evt) => {
+  const submitForm: FormEventHandler<HTMLFormElement> = (evt) => {
     evt.preventDefault();
     setPostRequested(true);
     if (initialArticle && initialArticle.id) {

@@ -1,10 +1,12 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import AuthorHeadingWidget from './author-heading-widget';
+import { Link } from 'react-router-dom';
+import { primaryBlack } from '../constants/colors';
+import { useSelector } from '../services/hooks';
 import { TBriefPostAnnounceProps } from '../types/widgets.types';
 import { HeaderFiveText } from '../ui-lib';
-import { primaryBlack } from '../constants/colors';
+import AuthorHeadingWidget from './author-heading-widget';
 
 const BriefPostAnnounceWrapper = styled.article`
   display: flex;
@@ -22,7 +24,7 @@ const BriefPostAnnounceWrapper = styled.article`
   }
 `;
 
-const BriefPostAnnounceWidget : React.FC<TBriefPostAnnounceProps> = ({
+const BriefPostAnnounceWidget: React.FC<TBriefPostAnnounceProps> = ({
   username,
   nickname,
   title,
@@ -30,22 +32,29 @@ const BriefPostAnnounceWidget : React.FC<TBriefPostAnnounceProps> = ({
   date,
   isLiked,
   likesCount,
+  slug,
   onLikeClick,
-}) => (
-  <BriefPostAnnounceWrapper>
-    <AuthorHeadingWidget
-      username={username}
-      nickname={nickname}
-      date={date}
-      image={image}
-      isAuthor={false}
-      isLiked={isLiked}
-      likesCount={likesCount}
-      onLikeClick={onLikeClick} />
-    <HeaderFiveText marginCSS='margin-right: 70px;' color={primaryBlack}>
-      {title}
-    </HeaderFiveText>
-  </BriefPostAnnounceWrapper>
-);
+}) => {
+  const currentUser = useSelector((state) => state.profile);
+  const link = slug ? `/article/${slug}` : '/';
+  return (
+    <BriefPostAnnounceWrapper>
+      <AuthorHeadingWidget
+        username={username}
+        nickname={nickname}
+        date={date}
+        image={image}
+        isAuthor={username === currentUser.username}
+        isLiked={isLiked}
+        likesCount={likesCount}
+        onLikeClick={onLikeClick} />
+      <Link to={link} style={{ textDecoration: 'none' }}>
+        <HeaderFiveText marginCSS='margin-right: 70px;' color={primaryBlack}>
+          {title}
+        </HeaderFiveText>
+      </Link>
+    </BriefPostAnnounceWrapper>
+  );
+};
 
 export default BriefPostAnnounceWidget;

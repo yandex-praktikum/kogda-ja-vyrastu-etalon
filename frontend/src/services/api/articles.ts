@@ -1,6 +1,6 @@
-import { User } from './users';
 import createInstance from './createInstance';
 import { Tag } from './tags';
+import { User } from './users';
 
 export interface Article {
   id: number;
@@ -25,7 +25,7 @@ export interface Article {
 
   favoredCount: number;
 
-  favoredByCurrentUser: boolean;
+  favoredBy: string[];
 
   tags: Tag[];
 }
@@ -41,7 +41,7 @@ export interface ArticlesQueryFilter {
 
   author?: string;
 
-  tag?: string;
+  tags?: string;
 
   isFavourite?: boolean;
 }

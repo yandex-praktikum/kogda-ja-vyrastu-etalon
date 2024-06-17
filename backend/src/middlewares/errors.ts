@@ -1,10 +1,12 @@
+import { CelebrateError, isCelebrateError } from 'celebrate';
 import { NextFunction, Request, Response } from 'express';
 import { HttpError } from '../errors/Base';
-import { CelebrateError, isCelebrateError } from 'celebrate';
 
 function formatCelebrateError(err: CelebrateError) {
-  const details = Array.from(err.details.values());
+  console.log('CelebrateError', CelebrateError);
+  const details = Array.from(err?.details?.values());
 
+  
   return `${err.message}: ${details.map(e => e.message).join(', ')}`;
 }
 
@@ -21,8 +23,9 @@ export function errorsHandler(
     status = 400;
     message = formatCelebrateError(err);
   } else {
-    status = err.status;
-    message = err.message;
+    console.log('err', err )
+    status = err?.status || 500;
+    message = err.message ||  'Internal Server Error';
   }
 
   return res.status(status).send({ message, status });

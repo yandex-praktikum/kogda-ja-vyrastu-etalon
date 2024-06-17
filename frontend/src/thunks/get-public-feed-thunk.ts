@@ -1,5 +1,8 @@
-import { batch } from 'react-redux';
 import { AxiosError } from 'axios';
+import { batch } from 'react-redux';
+import { TAPIError } from '../services/api.types';
+import { ArticlesQueryFilter, getAll } from '../services/api/articles';
+import { makeErrorObject } from '../services/helpers';
 import {
   publicFeedFailed,
   publicFeedRequested,
@@ -7,9 +10,6 @@ import {
   setViewFeed,
 } from '../store';
 import { AppThunk } from '../store/store.types';
-import { makeErrorObject } from '../services/helpers';
-import { TAPIError } from '../services/api.types';
-import { ArticlesQueryFilter, getAll } from '../services/api/articles';
 
 const getPublicFeedThunk: AppThunk = (
   params: ArticlesQueryFilter,
@@ -20,9 +20,13 @@ const getPublicFeedThunk: AppThunk = (
     batch(() => {
       dispatch(publicFeedRequested());
     });
-    const articles = await getAll({ ...params, offset: (feed ?? []).length });
+    const articles = await getAll({ offset: (feed ?? []).length, ...params });
     batch(() => {
-      dispatch(setViewFeed([...(feed ?? []), ...articles]));
+      if (params?.tags?.length) {
+        dispatch(setViewFeed([...articles]));
+      } else {
+        dispatch(setViewFeed([...(feed ?? []), ...articles]));
+      }
       dispatch(publicFeedSucceeded());
     });
   } catch (error) {

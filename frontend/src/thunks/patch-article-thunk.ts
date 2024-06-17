@@ -1,20 +1,20 @@
 import { AxiosError } from 'axios';
-import { AppThunk } from '../store/store.types';
-import {
-  articlePatchRequested,
-  articlePatchSucceeded,
-  articlePatchFailed,
-} from '../store';
+import { TAPIError } from '../services/api.types';
 import { patch as updateArticle } from '../services/api/articles';
 import { makeErrorObject } from '../services/helpers';
 import makeTagList from '../services/helpers/make-tagList';
-import { TAPIError } from '../services/api.types';
+import {
+  articlePatchFailed,
+  articlePatchRequested,
+  articlePatchSucceeded,
+} from '../store';
+import { AppThunk } from '../store/store.types';
 
 const patchArticleThunk: AppThunk = (articleId: number) => async (dispatch, getState) => {
   dispatch(articlePatchRequested());
   const articleData = getState().forms.article ?? {};
   const {
-    title, description, body, tags,
+    title, description, body, tags, image,
   } = articleData;
 
   const tagList = makeTagList(tags || '');
@@ -24,6 +24,7 @@ const patchArticleThunk: AppThunk = (articleId: number) => async (dispatch, getS
       title: title ?? undefined,
       description: description ?? undefined,
       body: body ?? undefined,
+      image: image ?? undefined,
       tags: tagList,
     });
     dispatch(articlePatchSucceeded());

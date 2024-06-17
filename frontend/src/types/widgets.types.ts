@@ -29,6 +29,7 @@ export type TBriefPostAnnounceProps = {
   date: Date;
   isLiked: boolean;
   likesCount: number;
+  slug: string
   onLikeClick: React.MouseEventHandler<SVGSVGElement>;
 };
 

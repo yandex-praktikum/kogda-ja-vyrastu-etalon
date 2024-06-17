@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import { CreateAuthTokenBody } from './auth-tokens.validation';
-import type { AuthTokenModel } from './auth-tokens.model';
-import { IUser, UserModel } from '../users/users.model';
 import * as jwt from 'jsonwebtoken';
 import config from '../config';
-import { ForbiddenError } from '../errors/Forbidden';
 import { BadRequestError } from '../errors/BadRequest';
+import { ForbiddenError } from '../errors/Forbidden';
+import { IUser, UserModel } from '../users/users.model';
+import type { AuthTokenModel } from './auth-tokens.model';
+import { CreateAuthTokenBody } from './auth-tokens.validation';
 
 interface AuthTokens {
   access_token: string;
@@ -18,54 +18,66 @@ export class AuthTokensController {
   constructor(
     private authTokenModel: AuthTokenModel,
     private userModel: UserModel,
-  ) {}
+  ) { }
 
   create = async (
     req: Request<object, AuthTokens, CreateAuthTokenBody>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { email, password } = req.body;
+    try {
+      const { email, password } = req.body;
 
-    const user = await this.userModel
-      .findOne({ email })
-      .select('+password +salt');
+      const user = await this.userModel
+        .findOne({ email })
+        .select('+password +salt');
 
-    const hashedPassword = await UserModel.hashPassword(password, user?.salt);
+      const hashedPassword = await UserModel.hashPassword(password, user?.salt);
 
-    if (user?.password !== hashedPassword) {
-      return next(new ForbiddenError());
+      if (user?.password !== hashedPassword) {
+        return next(new ForbiddenError());
+      }
+
+      const tokens = this.generateTokens(user);
+
+      await this.saveRefreshToken(user, tokens);
+
+      res.status(200).send(tokens);
+    } catch (error) {
+      next(error);
     }
-
-    const tokens = this.generateTokens(user);
-
-    await this.saveRefreshToken(user, tokens);
-
-    res.status(200).send(tokens);
   };
 
   update = async (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers['authorization'] as string;
-    const token = authHeader.replace('Bearer ', '');
-    const entity = await this.authTokenModel
-      .findOne({ token })
-      .populate('user');
+    try {
+      const authHeader = req.headers['authorization'] as string;
+      const token = authHeader.replace('Bearer ', '');
+      const entity = await this.authTokenModel
+        .findOne({ token })
+        .populate('user');
 
-    if (!entity) {
-      return next(new BadRequestError('Token is invalid'));
+      if (!entity) {
+        return next(new BadRequestError('Token is invalid'));
+      }
+
+      const tokens = this.generateTokens(entity.user);
+
+      await this.saveRefreshToken(entity.user, tokens);
+
+      res.status(200).send(tokens);
+    } catch (error) {
+      next(error);
     }
 
-    const tokens = this.generateTokens(entity.user);
-
-    await this.saveRefreshToken(entity.user, tokens);
-
-    res.status(200).send(tokens);
   };
 
-  revoke = async (req: Request, res: Response) => {
-    await this.authTokenModel.deleteOne({ user: req.user.id });
-
-    res.status(200).send();
+  revoke = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await this.authTokenModel.deleteOne({ user: res.locals.user.id });
+      res.status(200).send(user);
+    } catch (error) {
+      next(error);
+    }
   };
 
   private async saveRefreshToken(user: IUser, tokens: AuthTokens) {
@@ -77,6 +89,7 @@ export class AuthTokensController {
   }
 
   private generateTokens(user: IUser): AuthTokens {
+
     const accessToken = jwt.sign(
       { username: user.username },
       config.get('jwt.accessSecret'),
@@ -100,5 +113,6 @@ export class AuthTokensController {
       expires_in: 60 * 50,
       token_type: 'bearer',
     };
+
   }
 }

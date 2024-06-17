@@ -9,6 +9,7 @@ export interface CreateArticleBody {
   slug: string;
   description: string;
   body: string;
+  image?: string,
   tags: string[];
 }
 

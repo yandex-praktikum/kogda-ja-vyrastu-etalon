@@ -3,11 +3,11 @@ import { FormattedDate } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useDispatch, useSelector } from '../services/hooks';
+import { openConfirm } from '../store';
 import {
   addLikeThunk, deleteLikeThunk,
 } from '../thunks';
 import { DeletePostButton, EditPostButton } from '../ui-lib';
-import { openConfirm } from '../store';
 import BarTags from './bar-tags';
 import Likes from './likes';
 
@@ -103,6 +103,11 @@ const ArticleBody = styled.p`
  }
 `;
 
+export const isLiked = (
+  likes: string[] | undefined,
+  currentUserId: string,
+) => likes && likes.some((userId) => userId === currentUserId);
+
 const ArticleActions: FC<TArticleActionsProps> = ({ onClickEdit, onClickDelete }) => (
   <ArticleActionsContainer>
     <EditPostButton onClick={onClickEdit} />
@@ -117,6 +122,7 @@ const Article: FC<TArticleProps> = ({ slug }) => {
   const { article } = useSelector((state) => state.view);
   const currentUser = useSelector((state) => state.profile);
   const isAuthor = article?.author.username === currentUser.username;
+  const favorite = isLiked(article?.favoredBy, currentUser.id);
 
   const onClickDelete = () => {
     if (article) {
@@ -137,7 +143,7 @@ const Article: FC<TArticleProps> = ({ slug }) => {
       return;
     }
 
-    if (article.favoredByCurrentUser) {
+    if (favorite) {
       dispatch(deleteLikeThunk(article.id));
     } else {
       dispatch(addLikeThunk(article.id));
@@ -165,9 +171,9 @@ const Article: FC<TArticleProps> = ({ slug }) => {
         </ArticleCreateDate>
         <ArticleLikeWrapper>
           <Likes
-            likesCounterValue={0}
+            likesCounterValue={article.favoredCount}
             handleClick={onClickLike}
-            favorite={false} />
+            favorite={favorite!} />
         </ArticleLikeWrapper>
       </ArticleAuthorContainer>
       {article.image && (

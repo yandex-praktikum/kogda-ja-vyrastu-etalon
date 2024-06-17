@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { AuthTokensController } from './auth-tokens.controller';
+import { authMiddleware } from '../middlewares/auth';
 import { UserModel } from '../users/users.model';
+import { AuthTokensController } from './auth-tokens.controller';
+import { AuthTokenModel } from './auth-tokens.model';
 import {
   validateCreateAuthTokensRequest,
   validateUpdateAuthTokensRequest,
 } from './auth-tokens.validation';
-import { AuthTokenModel } from './auth-tokens.model';
-import { authMiddleware } from '../middlewares/auth';
 
 const AUTH_TOKENS_PATH = '/auth-tokens';
 
@@ -19,7 +19,7 @@ authTokensRouter.post(
   validateCreateAuthTokensRequest,
   controller.create,
 );
-authTokensRouter.put(
+authTokensRouter.patch(
   AUTH_TOKENS_PATH,
   validateUpdateAuthTokensRequest,
   controller.update,

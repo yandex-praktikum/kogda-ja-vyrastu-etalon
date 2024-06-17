@@ -16,34 +16,6 @@
 * Axios
 * Format.JS
 
-## Команда Red.Types
-* [Станислав Судовский](https://github.com/grecha1337).
-* [Георгий Трубачев](https://github.com/George051191).
-* [Алексей Вишневский](https://github.com/LexorV).
-* [Елена Шарипова](https://github.com/elena-sh-r).
-* [Евгений Карпель](https://github.com/kspshnik).
-* [Илья Пичугин](https://github.com/IlyaKZN).
-
-## Реализовано
-* Развернуты заготовки и настроен коллективный Гитхаб.
-* Организована файловая структура.
-* Реализован рефакторинг архитектуры (с классов на хуки, с jsx на tsx, с redux на redux-toolkit). Подробнее в ветке [refactored](https://github.com/RedTypes/react-project-kitchen-frontend/tree/refactored).
-* Реализован редизайн.
-
-## Бэкэнд
-Бэкенд для локального запуска проекта: [Контейнер в Docker](https://github.com/yandex-praktikum/kogda-virastu-backend).
-
-
-## Развертывание фронтэнда:
-* Создайте локальную директорию для проекта
-`mkdir dev`
-* Перейдите в созданную директорию
-`cd dev`
-* Клонируйте репозиторий в созданную директорию
-`git clone https://github.com/yandex-praktikum/kogda-virastu-frontend`
-* Откройте проект в любом редакторе кода
-* Выполните `npm install && npm start` в терминале, находясь в папке проекта.
-
 ## Подходы и архитектурные решения в рамках реализации проекта
 
 ### Константы

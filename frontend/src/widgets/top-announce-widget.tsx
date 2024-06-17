@@ -1,10 +1,12 @@
-import React, { FC } from 'react';
+import { FC } from 'react';
 import styled from 'styled-components';
-import { useSelector } from '../services/hooks';
-import BriefPostAnnounceWidget from './brief-post-announce-widget';
-import { Divider, HeaderThreeText } from '../ui-lib';
-import { TTopAnnounceWidgetProps } from '../types/widgets.types';
 import { Article } from '../services/api/articles';
+import { useDispatch, useSelector } from '../services/hooks';
+import { addLikeThunk, deleteLikeThunk } from '../thunks';
+import { TTopAnnounceWidgetProps } from '../types/widgets.types';
+import { Divider, HeaderThreeText } from '../ui-lib';
+import { isLiked } from './article';
+import BriefPostAnnounceWidget from './brief-post-announce-widget';
 
 const TopAnnounce = styled.div`
   display: flex;
@@ -47,8 +49,10 @@ const ItemWrapper = styled.li`
   padding-inline-start: 0;
 `;
 
-const TopAnnounceWidget : FC<TTopAnnounceWidgetProps> = ({ caption }) => {
+const TopAnnounceWidget: FC<TTopAnnounceWidgetProps> = ({ caption }) => {
   const topArticles = useSelector((state) => state.view.topFeed) ?? [];
+  const currentUser = useSelector((state) => state.profile);
+  const dispatch = useDispatch();
   return (
     <TopAnnounce>
       <HeaderThreeText paddingCSS='padding-bottom: 24px;'>
@@ -65,10 +69,21 @@ const TopAnnounceWidget : FC<TTopAnnounceWidgetProps> = ({ caption }) => {
             title,
             createdAt,
             favoredCount,
-            favoredByCurrentUser,
+            favoredBy,
             slug,
           } = article;
-          const nope = (): void => {
+          const favorite = isLiked(favoredBy, currentUser.id);
+          const onClickLike = (ev: React.MouseEvent) => {
+            ev.preventDefault();
+
+            if (!article) {
+              return;
+            }
+            if (favorite) {
+              dispatch(deleteLikeThunk(article.id));
+            } else {
+              dispatch(addLikeThunk(article.id));
+            }
           };
           return (
             <ItemWrapper key={slug}>
@@ -79,9 +94,10 @@ const TopAnnounceWidget : FC<TTopAnnounceWidgetProps> = ({ caption }) => {
                 image={image ?? ''}
                 title={title}
                 date={new Date(createdAt)}
-                isLiked={favoredByCurrentUser}
+                isLiked={favorite!}
                 likesCount={favoredCount}
-                onLikeClick={nope} />
+                slug={slug}
+                onLikeClick={onClickLike} />
             </ItemWrapper>
           );
         })}

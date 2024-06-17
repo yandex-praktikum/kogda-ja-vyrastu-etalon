@@ -5,14 +5,14 @@ import { THeaderTextProps, TTextProps } from '../types/styles.types';
 import {
   defaultFontSizes,
   defaultH1,
-  defaultH2,
-  defaultH3,
-  defaultH4,
-  defaultH5,
   defaultH1Mobile,
+  defaultH2,
   defaultH2Mobile,
+  defaultH3,
   defaultH3Mobile,
+  defaultH4,
   defaultH4Mobile,
+  defaultH5,
   defaultH5Mobile,
 } from '../constants/fontsconfigs';
 

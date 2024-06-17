@@ -1,15 +1,15 @@
 import { AxiosError } from 'axios';
 import { batch } from 'react-redux';
-import { AppThunk } from '../store/store.types';
+import { TAPIError } from '../services/api.types';
+import { remove as deleteComment } from '../services/api/comments';
+import { makeErrorObject } from '../services/helpers';
 import {
+  commentDeleteFailed,
   commentDeleteRequested,
   commentDeleteSucceeded,
-  commentDeleteFailed,
   setViewCommentsFeed,
 } from '../store';
-import { TAPIError } from '../services/api.types';
-import { makeErrorObject } from '../services/helpers';
-import { remove as deleteComment } from '../services/api/comments';
+import { AppThunk } from '../store/store.types';
 
 const deleteCommentThunk: AppThunk = (
   articleId: number,
@@ -20,7 +20,7 @@ const deleteCommentThunk: AppThunk = (
   try {
     const { status } = await deleteComment(articleId, commentId);
 
-    if (status === 204) {
+    if (status) {
       batch(() => {
         dispatch(commentDeleteSucceeded());
         dispatch(setViewCommentsFeed(

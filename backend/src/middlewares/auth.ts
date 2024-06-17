@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { IUser, UserModel } from '../users/users.model';
 import { Model, Types } from 'mongoose';
-import { UnauthorizedError } from '../errors/Unauthorized';
-import { ForbiddenError } from '../errors/Forbidden';
 import config from '../config';
-import { Role } from '../types/role';
+import { ForbiddenError } from '../errors/Forbidden';
 import { NotFoundError } from '../errors/NotFound';
+import { UnauthorizedError } from '../errors/Unauthorized';
+import { Role } from '../types/role';
+import { UserModel } from '../users/users.model';
 
 export async function authMiddleware(
   req: Request,
@@ -43,18 +43,18 @@ export async function authMiddleware(
     return next(new ForbiddenError());
   }
 
-  req.user = user;
+  res.locals.user = user;
 
   next();
 }
 
 export function roleGuardMiddleware(...roles: Role[]) {
   return function (req: Request, res: Response, next: NextFunction) {
-    if (!req.user) {
+    if (!res.locals.user) {
       return next(new UnauthorizedError());
     }
 
-    const hasAccess = roles.some((role) => req.user.roles.includes(role));
+    const hasAccess = roles.some((role) => res.locals.user.roles.includes(role));
 
     if (!hasAccess) {
       return next(new ForbiddenError());
@@ -72,11 +72,11 @@ export function currentUserAccessMiddleware<T>(
   return async function (req: Request, res: Response, next: NextFunction) {
     const id = req.params[idProperty];
 
-    if (!req.user) {
+    if (!res.locals.user) {
       return next(new UnauthorizedError());
     }
 
-    if (req.user.roles.includes(Role.Admin)) {
+    if (res.locals.user.roles.includes(Role.Admin)) {
       return next();
     }
 
@@ -87,7 +87,7 @@ export function currentUserAccessMiddleware<T>(
     }
 
     const userEntityId = entity[userProperty] as Types.ObjectId;
-    const hasAccess = new Types.ObjectId(req.user.id).equals(userEntityId);
+    const hasAccess = new Types.ObjectId(res.locals.user.id).equals(userEntityId);
 
     if (!hasAccess) {
       return next(new ForbiddenError());

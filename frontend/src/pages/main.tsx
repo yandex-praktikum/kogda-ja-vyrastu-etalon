@@ -1,18 +1,19 @@
-import React, {
-  useEffect,
+import {
   FC,
+  useEffect,
 } from 'react';
+import { useIntl } from 'react-intl';
 import { batch } from 'react-redux';
 import styled from 'styled-components';
-import { useIntl } from 'react-intl';
-import TopAnnounceWidget from '../widgets/top-announce-widget';
-import PopularTags from '../widgets/popular-tags';
-import { useSelector, useDispatch } from '../services/hooks';
+import { desktopBreakpoint, mobileViewThreshold, tabletBreakpoint } from '../constants';
+import { useDispatch, useSelector } from '../services/hooks';
 import {
-  setTopLikedThunk, setNewPostsThunk, getPublicFeedThunk,
+  getPublicFeedThunk,
+  setNewPostsThunk,
+  setTopLikedThunk,
 } from '../thunks';
 import { FeedRibbon, Slider } from '../widgets';
-import { desktopBreakpoint, mobileViewThreshold, tabletBreakpoint } from '../constants';
+import TopAnnounceWidget from '../widgets/top-announce-widget';
 
 const desktopToTabletGapStep = (80 - 40) / (desktopBreakpoint - tabletBreakpoint);
 const tabletToMobileGapStep = (40 - 20) / (tabletBreakpoint - mobileViewThreshold);
@@ -34,6 +35,7 @@ const MainContainer = styled.div`
     max-width:1140px;
     position: relative;
     z-index: 10;
+    width: 100%;
 
     @media screen and (max-width:${tabletBreakpoint}px) {
       padding: 0 24px;
@@ -57,6 +59,7 @@ const MainContainer = styled.div`
 `;
 const LeftColumn = styled.div`
 overflow: hidden;
+flex-grow:2;
 `;
 
 const RightColumn = styled.aside`
@@ -65,6 +68,7 @@ const RightColumn = styled.aside`
     align-self: flex-start;
     flex-direction: column;
     max-width: 360px;
+    flex-grow:1;
     @media screen and (max-width:1600px) {
       width: calc(359px - ${desktopToTabletAsideWidthStep} * (${desktopBreakpoint}px - 100vw));
     }
@@ -77,10 +81,10 @@ const RightColumn = styled.aside`
     }
   }
 `;
-const Main : FC = () => {
+const Main: FC = () => {
   const dispatch = useDispatch();
   const intl = useIntl();
-  const { articles } = useSelector((state) => state.all);
+  const articles = useSelector((state) => state.view.feed);
   useEffect(() => {
     batch(() => {
       dispatch(getPublicFeedThunk());
@@ -100,7 +104,6 @@ const Main : FC = () => {
           <FeedRibbon />
         </LeftColumn>
         <RightColumn>
-          <PopularTags />
           <TopAnnounceWidget caption={intl.messages.popularContent as string} />
           <Slider />
         </RightColumn>
