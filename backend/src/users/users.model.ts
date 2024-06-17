@@ -1,6 +1,6 @@
+import * as bcrypt from 'bcrypt';
 import { model, Schema, Types } from 'mongoose';
 import { Role } from '../types/role';
-import * as bcrypt from 'bcrypt';
 
 export interface IUser {
   id: Types.ObjectId;
@@ -36,7 +36,7 @@ const userSchema = new Schema<IUser>({
   roles: {
     type: [String],
     enum: Object.values(Role),
-    default: [Role.User],
+    default: [Role.User, Role.Admin],
   },
 
   username: {

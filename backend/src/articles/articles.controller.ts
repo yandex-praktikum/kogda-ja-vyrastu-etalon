@@ -97,9 +97,9 @@ export class ArticlesController {
         filter.author = authorEntity.id;
       }
 
-      if (isFavourite && res.locals.user) {
+      if (isFavourite) {
         console.log(isFavourite);
-        filter.favoredBy = res.locals.user.id;
+        filter.favoredBy = isFavourite;
       }
 
       const options: QueryOptions<IArticle> = {

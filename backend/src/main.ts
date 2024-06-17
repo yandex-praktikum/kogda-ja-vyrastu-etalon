@@ -37,9 +37,10 @@ const start = async () => {
   try {
     const serverPort = config.get<number>('server.port');
     const { user, password, host, port, database } = config.get('database');
-
+    console.log();
+    
     await mongoose.connect(
-      `mongodb://${user}:${password}@${host}:${port}/${database}?authSource=admin`,
+      user ? `mongodb://${user}:${password}@${host}:${port}/${database}?authSource=admin` : `mongodb://${host}:${port}/${database}`,
     );
     app.listen(serverPort, () => console.log('Server started on port 3000'));
   } catch (error) {
